@@ -1,0 +1,19 @@
+import { useEffect, useState } from "react";
+import { Package, ShoppingCart, TrendingUp, AlertTriangle, ArrowUpRight } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { listar } from "../services/api";
+
+const ventasSemana=[{dia:"Lun",total:420},{dia:"Mar",total:580},{dia:"Mié",total:390},{dia:"Jue",total:720},{dia:"Vie",total:650},{dia:"Sáb",total:910},{dia:"Dom",total:540}];
+export default function Dashboard(){
+ const [productos,setProductos]=useState([]); const [ventas,setVentas]=useState([]); const [inventario,setInventario]=useState([]);
+ useEffect(()=>{Promise.all([listar("productos"),listar("ventas"),listar("inventario")]).then(([p,v,i])=>{setProductos(p);setVentas(v);setInventario(i);}).catch(console.error);},[]);
+ const bajo=inventario.filter(x=>Number(x.stock_actual)<=10).length;
+ const totalVentas=ventas.reduce((s,v)=>s+Number(v.total||0),0);
+ const cards=[{label:"Productos registrados",value:productos.length,detail:"En el catálogo",icon:Package,color:"purple"},{label:"Ventas registradas",value:ventas.length,detail:"Operaciones",icon:ShoppingCart,color:"blue"},{label:"Total de ventas",value:`Bs ${totalVentas.toFixed(2)}`,detail:"Acumulado de muestra",icon:TrendingUp,color:"green"},{label:"Stock por revisar",value:bajo,detail:"Existencias bajas",icon:AlertTriangle,color:"orange"}];
+ return <><div className="page-heading"><div><span className="eyebrow">RESUMEN GENERAL</span><h1>Panel principal</h1><p>Bienvenido. Aquí tienes el resumen de tu licorería.</p></div><span className="date-chip">Vista general · 2026</span></div>
+ <div className="stats-grid">{cards.map(c=><div className="stat-card" key={c.label}><div className={`stat-icon ${c.color}`}><c.icon size={21}/></div><div className="stat-label">{c.label}</div><div className="stat-value">{c.value}</div><div className="stat-detail">{c.detail}</div></div>)}</div>
+ <div className="dashboard-grid"><section className="panel chart-panel"><div className="panel-heading"><div><h2>Actividad semanal</h2><p>Ejemplo visual de ventas por día</p></div><span className="tag">Últimos 7 días</span></div><div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><BarChart data={ventasSemana}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#edf0f4"/><XAxis dataKey="dia" axisLine={false} tickLine={false}/><YAxis axisLine={false} tickLine={false}/><Tooltip formatter={v=>`Bs ${v}`}/><Bar dataKey="total" fill="#15966b" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div></section>
+ <section className="panel"><div className="panel-heading"><div><h2>Accesos rápidos</h2><p>Operaciones frecuentes</p></div></div><div className="quick-list"><a href="/productos"><Package/>Registrar producto <ArrowUpRight/></a><a href="/compras"><TrendingUp/>Registrar compra <ArrowUpRight/></a><a href="/ventas"><ShoppingCart/>Registrar venta <ArrowUpRight/></a><a href="/inventario"><AlertTriangle/>Consultar inventario <ArrowUpRight/></a></div></section></div>
+ <section className="panel table-panel"><div className="panel-heading"><div><h2>Productos registrados</h2><p>Vista rápida del catálogo</p></div><a className="text-link" href="/productos">Ver todos</a></div><div className="table-scroll"><table><thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Precio de venta</th><th>Estado</th></tr></thead><tbody>{productos.slice(0,5).map(p=><tr key={p.id}><td>{p.codigo}</td><td className="strong-cell">{p.nombre}</td><td>{p.categoria}</td><td>Bs {Number(p.precio_venta||0).toFixed(2)}</td><td><span className="status-pill">Activo</span></td></tr>)}{!productos.length&&<tr><td colSpan="5" className="empty">No hay productos para mostrar.</td></tr>}</tbody></table></div></section>
+ </>;
+}
